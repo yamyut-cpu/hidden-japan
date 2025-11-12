@@ -1,8 +1,12 @@
-// Hidden Japan – Toyama (EN/JA, filters + detail modal)
+// Hidden Japan – Toyama (EN/JA, filters + detail modal + image fallback)
 // src/App.jsx
 
 // ===== ⚙️ IMPORTS =====
 import { useState, useMemo, useEffect } from "react";
+
+// ===== 🖼 フォールバック画像（画像取得に失敗した時の保険） =====
+const fallbackImg = (seed, w = 1200, h = 800) =>
+  `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
 
 // ===== 📍 SPOTSデータ（観光地の情報はココに追加・編集） =====
 const SPOTS = [
@@ -17,9 +21,8 @@ const SPOTS = [
       "Snow walls, ropeways and stunning alpine views. Best from spring to autumn.",
     desc_ja:
       "雪の大谷、ロープウェイ、雄大な山岳景観。春〜秋がベストシーズン。",
-    map: "https://maps.google.com/?q=Tateyama+Kurobe+Alpine+Route",
-    hotel: "https://example.com/aff/hotels-toyama",   // ← 自分のアフィURLに差し替え
-    ticket: "https://example.com/aff/tickets-tateyama" // ← 自分のアフィURLに差し替え
+    map: "https://maps.google.com/?q=Tateyama+Kurobe+Alpine+Route"
+    // hotel: "", ticket: "" ← 無ければ削除/未設定でOK（ボタンは出ません）
   },
   {
     id: "gokayama",
@@ -32,8 +35,7 @@ const SPOTS = [
       "Quiet UNESCO-listed thatched villages, calmer than Shirakawa-go.",
     desc_ja:
       "世界遺産の合掌集落。白川郷より落ち着いた雰囲気でじっくり楽しめる。",
-    map: "https://maps.google.com/?q=Gokayama",
-    ticket: "https://example.com/aff/tours-gokayama"
+    map: "https://maps.google.com/?q=Gokayama"
   },
   {
     id: "ama",
@@ -57,8 +59,8 @@ const SPOTS = [
     desc_en:
       "Local delicacy—try tempura or sashimi. Look for 'Shiro-ebi' signs.",
     desc_ja: "富山名物の白えび。天ぷらや刺身で味わうのが定番。",
-    map: "https://maps.google.com/?q=Toyama+white+shrimp",
-    food: "https://example.com/aff/restaurants-toyama"
+    map: "https://maps.google.com/?q=Toyama+white+shrimp"
+    // food: ""
   }
 ];
 
@@ -157,13 +159,17 @@ export default function App() {
   // 言語はローカル保存（次回も維持）
   const [lang, setLang] = useState("ja");
   useEffect(() => {
-    const saved = localStorage.getItem("hj_lang");
-    if (saved) setLang(saved);
+    try {
+      const saved = localStorage.getItem("hj_lang");
+      if (saved) setLang(saved);
+    } catch {}
   }, []);
   const toggleLang = () => {
     const next = lang === "en" ? "ja" : "en";
     setLang(next);
-    localStorage.setItem("hj_lang", next);
+    try {
+      localStorage.setItem("hj_lang", next);
+    } catch {}
   };
 
   const dict = T[lang];
@@ -193,6 +199,7 @@ export default function App() {
             src="https://source.unsplash.com/1600x900/?toyama,japan,alps"
             alt="Toyama"
             style={S.heroImg}
+            onError={(e) => { e.currentTarget.src = fallbackImg("toyama-hero", 1600, 900); }}
           />
           <div style={S.heroBody}>
             <h1 style={{ margin: 0 }}>{dict.tagline}</h1>
@@ -224,7 +231,12 @@ export default function App() {
             const desc = lang === "en" ? spot.desc_en : spot.desc_ja;
             return (
               <article key={spot.id} style={S.card} onClick={() => setOpen(spot)}>
-                <img src={spot.hero} alt={title} style={S.cardImg} />
+                <img
+                  src={spot.hero}
+                  alt={title}
+                  style={S.cardImg}
+                  onError={(e) => { e.currentTarget.src = fallbackImg(spot.id); }}
+                />
                 <div style={S.cardBody}>
                   <div>
                     <span style={S.chip}>{spot.area}</span>
@@ -257,7 +269,12 @@ export default function App() {
         <div style={S.modalBg} onClick={() => setOpen(null)}>
           <div style={S.modal} onClick={(e) => e.stopPropagation()}>
             <div style={{ position: "relative" }}>
-              <img src={open.hero} alt="detail" style={S.modalImg} />
+              <img
+                src={open.hero}
+                alt="detail"
+                style={S.modalImg}
+                onError={(e) => { e.currentTarget.src = fallbackImg(open.id, 1200, 800); }}
+              />
               <button style={S.close} onClick={() => setOpen(null)}>✕</button>
             </div>
             <div style={S.modalBody}>

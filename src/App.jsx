@@ -1,10 +1,10 @@
-// Hidden Japan – Toyama (English & Japanese bilingual page)
+// Hidden Japan – Toyama (EN/JA, filters + detail modal)
 // src/App.jsx
 
-// ===== ⚙️ IMPORTS（読み込み） =====
-import { useState, useMemo } from "react";
+// ===== ⚙️ IMPORTS =====
+import { useState, useMemo, useEffect } from "react";
 
-// ===== 📍 SPOTSデータ（観光地の情報を増やすならココ） =====
+// ===== 📍 SPOTSデータ（観光地の情報はココに追加・編集） =====
 const SPOTS = [
   {
     id: "tateyama",
@@ -12,13 +12,14 @@ const SPOTS = [
     title_ja: "立山黒部アルペンルート",
     cat: "nature",
     area: "Tateyama / Kurobe",
-    // 富山系の検索ワードでランダム画像（固定にしたくなったら後で写真IDに差し替えOK）
     hero: "https://source.unsplash.com/1200x800/?tateyama,toyama,alpine,Japan",
     desc_en:
       "Snow walls, ropeways and stunning alpine views. Best from spring to autumn.",
     desc_ja:
       "雪の大谷、ロープウェイ、雄大な山岳景観。春〜秋がベストシーズン。",
     map: "https://maps.google.com/?q=Tateyama+Kurobe+Alpine+Route",
+    hotel: "https://example.com/aff/hotels-toyama",   // ← 自分のアフィURLに差し替え
+    ticket: "https://example.com/aff/tickets-tateyama" // ← 自分のアフィURLに差し替え
   },
   {
     id: "gokayama",
@@ -32,6 +33,7 @@ const SPOTS = [
     desc_ja:
       "世界遺産の合掌集落。白川郷より落ち着いた雰囲気でじっくり楽しめる。",
     map: "https://maps.google.com/?q=Gokayama",
+    ticket: "https://example.com/aff/tours-gokayama"
   },
   {
     id: "ama",
@@ -39,12 +41,11 @@ const SPOTS = [
     title_ja: "雨晴海岸",
     cat: "nature",
     area: "Himi",
-    hero:
-      "https://source.unsplash.com/1200x800/?ama-harashi,coast,toyama,sea,mountains",
+    hero: "https://source.unsplash.com/1200x800/?ama-harashi,coast,toyama,sea,mountains",
     desc_en:
       "Rare view where the sea meets the 3,000m Tateyama mountains.",
     desc_ja: "海越しに立山連峰を望む絶景スポット。天気が良い日におすすめ。",
-    map: "https://maps.google.com/?q=Amaharashi+Coast",
+    map: "https://maps.google.com/?q=Amaharashi+Coast"
   },
   {
     id: "shiroebi",
@@ -52,91 +53,80 @@ const SPOTS = [
     title_ja: "富山湾の白えび",
     cat: "food",
     area: "Toyama City",
-    hero:
-      "https://source.unsplash.com/1200x800/?white-shrimp,toyama,seafood,Japan",
+    hero: "https://source.unsplash.com/1200x800/?white-shrimp,toyama,seafood,Japan",
     desc_en:
       "Local delicacy—try tempura or sashimi. Look for 'Shiro-ebi' signs.",
     desc_ja: "富山名物の白えび。天ぷらや刺身で味わうのが定番。",
     map: "https://maps.google.com/?q=Toyama+white+shrimp",
-  },
+    food: "https://example.com/aff/restaurants-toyama"
+  }
 ];
 
-// ===== 🎨 デザイン用スタイル（背景や文字色はここ） =====
+// ===== 🎨 デザイン（スタイル） =====
 const S = {
   page: {
     minHeight: "100vh",
     background: "linear-gradient(180deg,#0b0b0b,#161616)",
     color: "#fff",
     fontFamily:
-      "system-ui, -apple-system, Segoe UI, Roboto, Noto Sans JP, sans-serif",
+      "system-ui, -apple-system, Segoe UI, Roboto, Noto Sans JP, sans-serif"
   },
   wrap: { maxWidth: 1080, margin: "0 auto", padding: "20px" },
   header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "10px 0 16px",
-    borderBottom: "1px solid #333",
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "10px 0 16px", borderBottom: "1px solid #333"
   },
   logo: { fontWeight: 900, fontSize: 18 },
   btn: {
-    border: "1px solid #444",
-    borderRadius: 8,
-    padding: "6px 10px",
-    background: "#111",
-    color: "#fff",
-    cursor: "pointer",
+    border: "1px solid #444", borderRadius: 8, padding: "6px 10px",
+    background: "#111", color: "#fff", cursor: "pointer", fontSize: 13
   },
   hero: {
-    marginTop: 20,
-    borderRadius: 12,
-    overflow: "hidden",
-    border: "1px solid #333",
+    marginTop: 20, borderRadius: 12, overflow: "hidden", border: "1px solid #333"
   },
-  heroImg: {
-    width: "100%",
-    height: 300,
-    objectFit: "cover",
-  },
+  heroImg: { width: "100%", height: 300, objectFit: "cover" },
   heroBody: { padding: 16 },
+  filters: { marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" },
   grid: {
-    marginTop: 20,
-    display: "grid",
-    gap: 14,
-    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+    marginTop: 20, display: "grid", gap: 14,
+    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))"
   },
   card: {
-    background: "#0f0f0f",
-    border: "1px solid #333",
-    borderRadius: 12,
-    overflow: "hidden",
+    background: "#0f0f0f", border: "1px solid #333",
+    borderRadius: 12, overflow: "hidden", cursor: "pointer"
   },
-  cardImg: {
-    width: "100%",
-    height: 160,
-    objectFit: "cover",
-  },
+  cardImg: { width: "100%", height: 160, objectFit: "cover" },
   cardBody: { padding: 12 },
   chip: {
-    display: "inline-block",
-    border: "1px solid #555",
-    borderRadius: 999,
-    padding: "2px 8px",
-    fontSize: 12,
-    color: "#ccc",
-    marginRight: 6,
+    display: "inline-block", border: "1px solid #555", borderRadius: 999,
+    padding: "2px 8px", fontSize: 12, color: "#ccc", marginRight: 6
   },
   footer: {
-    textAlign: "center",
-    marginTop: 24,
-    borderTop: "1px solid #333",
-    paddingTop: 12,
-    color: "#aaa",
-    fontSize: 12,
+    textAlign: "center", marginTop: 24, borderTop: "1px solid #333",
+    paddingTop: 12, color: "#aaa", fontSize: 12
   },
+  // modal
+  modalBg: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 16
+  },
+  modal: {
+    width: "100%", maxWidth: 720, background: "#0f0f0f", border: "1px solid #333",
+    borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr"
+  },
+  modalImg: { width: "100%", height: 280, objectFit: "cover" },
+  modalBody: { padding: 16, display: "grid", gap: 10 },
+  linkBtn: {
+    display: "inline-block", border: "1px solid #2a2a2a", borderRadius: 10,
+    padding: "6px 10px", textDecoration: "none", color: "#fff", background: "#111", fontSize: 13
+  },
+  close: {
+    position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.6)",
+    color: "#fff", border: "1px solid #333", borderRadius: 8, padding: "4px 10px", cursor: "pointer"
+  }
 };
 
-// ===== 💬 表示テキスト（翻訳切替） =====
+// ===== 💬 表示テキスト（翻訳） =====
 const T = {
   en: {
     title: "Hidden Japan – Toyama",
@@ -144,6 +134,10 @@ const T = {
     spots: "Featured Spots",
     switch: "日本語",
     openMap: "Open Map",
+    bookHotel: "Book Hotels",
+    getTicket: "Get Tickets",
+    whereToEat: "Where to Eat",
+    filters: { all: "All", nature: "Nature", culture: "Culture", food: "Food" }
   },
   ja: {
     title: "Hidden Japan – 富山",
@@ -151,13 +145,38 @@ const T = {
     spots: "おすすめスポット",
     switch: "EN",
     openMap: "地図で見る",
-  },
+    bookHotel: "周辺の宿を予約",
+    getTicket: "チケットを探す",
+    whereToEat: "食べに行く",
+    filters: { all: "すべて", nature: "自然", culture: "文化", food: "グルメ" }
+  }
 };
 
-// ===== 🧱 ページ本体（ここから下が画面に出る） =====
+// ===== 🧱 ページ本体 =====
 export default function App() {
+  // 言語はローカル保存（次回も維持）
   const [lang, setLang] = useState("ja");
+  useEffect(() => {
+    const saved = localStorage.getItem("hj_lang");
+    if (saved) setLang(saved);
+  }, []);
+  const toggleLang = () => {
+    const next = lang === "en" ? "ja" : "en";
+    setLang(next);
+    localStorage.setItem("hj_lang", next);
+  };
+
   const dict = T[lang];
+
+  // カテゴリ絞り込み
+  const [filter, setFilter] = useState("all");
+  const filtered = useMemo(() => {
+    if (filter === "all") return SPOTS;
+    return SPOTS.filter((s) => s.cat === filter);
+  }, [filter]);
+
+  // 詳細モーダル
+  const [open, setOpen] = useState(null);
 
   return (
     <div style={S.page}>
@@ -165,24 +184,34 @@ export default function App() {
         {/* ===== 👑 ヘッダー ===== */}
         <header style={S.header}>
           <div style={S.logo}>{dict.title}</div>
-          <button
-            style={S.btn}
-            onClick={() => setLang(lang === "en" ? "ja" : "en")}
-          >
-            {dict.switch}
-          </button>
+          <button style={S.btn} onClick={toggleLang}>{dict.switch}</button>
         </header>
 
-        {/* ===== 🌄 HEROセクション（上の大きな画像とキャッチコピー） ===== */}
+        {/* ===== 🌄 ヒーロー ===== */}
         <section style={S.hero}>
           <img
-            // 立山・富山系の検索ランダム画像
             src="https://source.unsplash.com/1600x900/?toyama,japan,alps"
             alt="Toyama"
             style={S.heroImg}
           />
           <div style={S.heroBody}>
             <h1 style={{ margin: 0 }}>{dict.tagline}</h1>
+            {/* フィルター */}
+            <div style={S.filters}>
+              {["all","nature","culture","food"].map(k => (
+                <button
+                  key={k}
+                  style={{
+                    ...S.btn,
+                    background: filter === k ? "#0ea5e9" : "#111",
+                    color: filter === k ? "#001018" : "#fff"
+                  }}
+                  onClick={() => setFilter(k)}
+                >
+                  {dict.filters[k]}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -190,11 +219,11 @@ export default function App() {
         <h2 style={{ marginTop: 24 }}>{dict.spots}</h2>
 
         <div style={S.grid}>
-          {SPOTS.map((spot) => {
+          {filtered.map((spot) => {
             const title = lang === "en" ? spot.title_en : spot.title_ja;
             const desc = lang === "en" ? spot.desc_en : spot.desc_ja;
             return (
-              <article key={spot.id} style={S.card}>
+              <article key={spot.id} style={S.card} onClick={() => setOpen(spot)}>
                 <img src={spot.hero} alt={title} style={S.cardImg} />
                 <div style={S.cardBody}>
                   <div>
@@ -211,20 +240,6 @@ export default function App() {
                   </div>
                   <h3 style={{ margin: "8px 0 4px" }}>{title}</h3>
                   <p style={{ fontSize: 13, color: "#ccc", margin: 0 }}>{desc}</p>
-                  <div style={{ marginTop: 6 }}>
-                    <a
-                      href={spot.map}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        fontSize: 13,
-                        textDecoration: "none",
-                        color: "#0ea5e9",
-                      }}
-                    >
-                      📍 {dict.openMap}
-                    </a>
-                  </div>
                 </div>
               </article>
             );
@@ -236,6 +251,61 @@ export default function App() {
           © {new Date().getFullYear()} Hidden Japan – Toyama
         </footer>
       </div>
+
+      {/* ===== 🪟 詳細モーダル（カードをクリックで開く） ===== */}
+      {open && (
+        <div style={S.modalBg} onClick={() => setOpen(null)}>
+          <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={{ position: "relative" }}>
+              <img src={open.hero} alt="detail" style={S.modalImg} />
+              <button style={S.close} onClick={() => setOpen(null)}>✕</button>
+            </div>
+            <div style={S.modalBody}>
+              <h2 style={{ margin: 0 }}>
+                {lang === "en" ? open.title_en : open.title_ja}
+              </h2>
+              <div>
+                <span style={S.chip}>{open.area}</span>
+                <span style={S.chip}>
+                  {lang === "en"
+                    ? open.cat.charAt(0).toUpperCase() + open.cat.slice(1)
+                    : open.cat === "nature"
+                    ? "自然"
+                    : open.cat === "culture"
+                    ? "文化"
+                    : "グルメ"}
+                </span>
+              </div>
+              <p style={{ margin: 0, color: "#ccc" }}>
+                {lang === "en" ? open.desc_en : open.desc_ja}
+              </p>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {open.map && (
+                  <a href={open.map} target="_blank" rel="noreferrer" style={S.linkBtn}>
+                    📍 {dict.openMap}
+                  </a>
+                )}
+                {open.hotel && (
+                  <a href={open.hotel} target="_blank" rel="noreferrer" style={S.linkBtn}>
+                    🏨 {dict.bookHotel}
+                  </a>
+                )}
+                {open.ticket && (
+                  <a href={open.ticket} target="_blank" rel="noreferrer" style={S.linkBtn}>
+                    🎫 {dict.getTicket}
+                  </a>
+                )}
+                {open.food && (
+                  <a href={open.food} target="_blank" rel="noreferrer" style={S.linkBtn}>
+                    🍣 {dict.whereToEat}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

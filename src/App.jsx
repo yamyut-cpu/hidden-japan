@@ -1,14 +1,14 @@
-// Hidden Japan – Toyama (EN/JA, filters + search + detail modal + image fallback)
+// Hidden Japan – Toyama
+// EN/JA + filters + search + detail modal + map embed + image fallback
 // src/App.jsx
 
-// ===== ⚙️ IMPORTS =====
 import { useState, useMemo, useEffect } from "react";
 
-// ===== 🖼 フォールバック画像（画像取得に失敗した時の保険） =====
+/* ============ Image fallback (always shows something) ============ */
 const fallbackImg = (seed, w = 1200, h = 800) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
 
-// ===== 📍 SPOTSデータ（観光地の情報はココに追加・編集） =====
+/* ============ Spots (fixed Unsplash image IDs for Toyama) ============ */
 const SPOTS = [
   {
     id: "tateyama",
@@ -16,12 +16,12 @@ const SPOTS = [
     title_ja: "立山黒部アルペンルート",
     cat: "nature",
     area: "Tateyama / Kurobe",
-    // 固定IDの安定画像
-    hero: "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1600&auto=format&fit=crop",
+    // Tateyama-like alpine view
+    hero:
+      "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1600&auto=format&fit=crop",
     desc_en:
       "Snow walls, ropeways and stunning alpine views. Best from spring to autumn.",
-    desc_ja:
-      "雪の大谷、ロープウェイ、雄大な山岳景観。春〜秋がベストシーズン。",
+    desc_ja: "雪の大谷、ロープウェイ、雄大な山岳景観。春〜秋がベスト。",
     map: "https://maps.google.com/?q=Tateyama+Kurobe+Alpine+Route"
   },
   {
@@ -30,12 +30,13 @@ const SPOTS = [
     title_ja: "五箇山（合掌造り集落）",
     cat: "culture",
     area: "Nanto",
-    hero: "https://images.unsplash.com/photo-1572960360912-490f0b13c3bd?q=80&w=1600&auto=format&fit=crop",
+    // Gokayama thatched village
+    hero:
+      "https://images.unsplash.com/photo-1572960360912-490f0b13c3bd?q=80&w=1600&auto=format&fit=crop",
     desc_en:
-      "Quiet UNESCO-listed thatched villages, calmer than Shirakawa-go.",
-    desc_ja:
-      "世界遺産の合掌集落。白川郷より落ち着いた雰囲気でじっくり楽しめる。",
-    map: "https://maps.google.com/?q=Gokayama"
+      "UNESCO-listed thatched villages—quieter than Shirakawa-go.",
+    desc_ja: "世界遺産の合掌造り集落。白川郷より落ち着いて楽しめる。",
+    map: "https://maps.google.com/?q=Gokayama+Gassho+Village"
   },
   {
     id: "ama",
@@ -43,10 +44,12 @@ const SPOTS = [
     title_ja: "雨晴海岸",
     cat: "nature",
     area: "Himi",
-    hero: "https://images.unsplash.com/photo-1519682557860-56b48f0bbd9b?q=80&w=1600&auto=format&fit=crop",
+    // Sea with mountains (Amaharashi vibe)
+    hero:
+      "https://images.unsplash.com/photo-1519682557860-56b48f0bbd9b?q=80&w=1600&auto=format&fit=crop",
     desc_en:
-      "Rare view where the sea meets the 3,000m Tateyama mountains.",
-    desc_ja: "海越しに立山連峰を望む絶景スポット。天気が良い日におすすめ。",
+      "Rare view of the sea and 3,000m Tateyama range together—go on clear days.",
+    desc_ja: "海越しに立山連峰。晴れた日におすすめの絶景。",
     map: "https://maps.google.com/?q=Amaharashi+Coast"
   },
   {
@@ -55,15 +58,17 @@ const SPOTS = [
     title_ja: "富山湾の白えび",
     cat: "food",
     area: "Toyama City",
-    hero: "https://images.unsplash.com/photo-1558036117-15d82a90b9b6?q=80&w=1600&auto=format&fit=crop",
+    // Food image (white shrimp vibe)
+    hero:
+      "https://images.unsplash.com/photo-1558036117-15d82a90b9b6?q=80&w=1600&auto=format&fit=crop",
     desc_en:
-      "Local delicacy—try tempura or sashimi. Look for 'Shiro-ebi' signs.",
-    desc_ja: "富山名物の白えび。天ぷらや刺身で味わうのが定番。",
+      "Local delicacy—try tempura or sashimi. Look for “Shiro-ebi”.",
+    desc_ja: "名物・白えび。天ぷらや刺身でぜひ。",
     map: "https://maps.google.com/?q=Toyama+white+shrimp"
   }
 ];
 
-// ===== 🎨 デザイン（スタイル） =====
+/* ============ Styles ============ */
 const S = {
   page: {
     minHeight: "100vh",
@@ -74,65 +79,140 @@ const S = {
   },
   wrap: { maxWidth: 1080, margin: "0 auto", padding: "20px" },
   header: {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "10px 0 16px", borderBottom: "1px solid #333"
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 0 16px",
+    borderBottom: "1px solid #333"
   },
   logo: { fontWeight: 900, fontSize: 18 },
   btn: {
-    border: "1px solid #444", borderRadius: 8, padding: "6px 10px",
-    background: "#111", color: "#fff", cursor: "pointer", fontSize: 13
+    border: "1px solid #444",
+    borderRadius: 8,
+    padding: "6px 10px",
+    background: "#111",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 13
   },
   hero: {
-    marginTop: 20, borderRadius: 12, overflow: "hidden", border: "1px solid #333"
+    marginTop: 20,
+    borderRadius: 12,
+    overflow: "hidden",
+    border: "1px solid #333"
   },
   heroImg: { width: "100%", height: 300, objectFit: "cover" },
   heroBody: { padding: 16 },
   filters: { marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" },
   input: {
-    marginTop: 10, width: "100%", padding: "8px 10px",
-    borderRadius: 10, border: "1px solid #333", background: "#0f0f0f",
-    color: "#fff", fontSize: 14
+    marginTop: 10,
+    width: "100%",
+    padding: "8px 10px",
+    borderRadius: 10,
+    border: "1px solid #333",
+    background: "#0f0f0f",
+    color: "#fff",
+    fontSize: 14
   },
   grid: {
-    marginTop: 20, display: "grid", gap: 14,
+    marginTop: 20,
+    display: "grid",
+    gap: 14,
     gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))"
   },
   card: {
-    background: "#0f0f0f", border: "1px solid #333",
-    borderRadius: 12, overflow: "hidden", cursor: "pointer"
+    background: "#0f0f0f",
+    border: "1px solid #333",
+    borderRadius: 12,
+    overflow: "hidden",
+    cursor: "pointer"
   },
   cardImg: { width: "100%", height: 160, objectFit: "cover" },
   cardBody: { padding: 12 },
   chip: {
-    display: "inline-block", border: "1px solid #555", borderRadius: 999,
-    padding: "2px 8px", fontSize: 12, color: "#ccc", marginRight: 6
+    display: "inline-block",
+    border: "1px solid #555",
+    borderRadius: 999,
+    padding: "2px 8px",
+    fontSize: 12,
+    color: "#ccc",
+    marginRight: 6
   },
   footer: {
-    textAlign: "center", marginTop: 24, borderTop: "1px solid #333",
-    paddingTop: 12, color: "#aaa", fontSize: 12
+    textAlign: "center",
+    marginTop: 24,
+    borderTop: "1px solid #333",
+    paddingTop: 12,
+    color: "#aaa",
+    fontSize: 12
   },
   // modal
   modalBg: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-    display: "flex", alignItems: "center", justifyContent: "center", padding: 16
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.6)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16
   },
   modal: {
-    width: "100%", maxWidth: 720, background: "#0f0f0f", border: "1px solid #333",
-    borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr"
+    width: "100%",
+    maxWidth: 720,
+    background: "#0f0f0f",
+    border: "1px solid #333",
+    borderRadius: 12,
+    overflow: "hidden",
+    display: "grid",
+    gridTemplateRows: "auto 1fr"
   },
   modalImg: { width: "100%", height: 280, objectFit: "cover" },
   modalBody: { padding: 16, display: "grid", gap: 10 },
   linkBtn: {
-    display: "inline-block", border: "1px solid #2a2a2a", borderRadius: 10,
-    padding: "6px 10px", textDecoration: "none", color: "#fff", background: "#111", fontSize: 13
+    display: "inline-block",
+    border: "1px solid #2a2a2a",
+    borderRadius: 10,
+    padding: "6px 10px",
+    textDecoration: "none",
+    color: "#fff",
+    background: "#111",
+    fontSize: 13
   },
   close: {
-    position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.6)",
-    color: "#fff", border: "1px solid #333", borderRadius: 8, padding: "4px 10px", cursor: "pointer"
+    position: "absolute",
+    top: 10,
+    right: 10,
+    background: "rgba(0,0,0,0.6)",
+    color: "#fff",
+    border: "1px solid #333",
+    borderRadius: 8,
+    padding: "4px 10px",
+    cursor: "pointer"
   }
 };
 
-// ===== 💬 表示テキスト（翻訳） =====
+/* ============ Google Map mini-embed ============ */
+function MapEmbed({ q }) {
+  const search = q?.split("q=")[1] || q || "";
+  const src = `https://www.google.com/maps?q=${encodeURIComponent(
+    search
+  )}&output=embed`;
+  return (
+    <div style={{ border: "1px solid #333", borderRadius: 12, overflow: "hidden" }}>
+      <iframe
+        title="map"
+        src={src}
+        width="100%"
+        height="260"
+        style={{ border: 0 }}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+    </div>
+  );
+}
+
+/* ============ Texts ============ */
 const T = {
   en: {
     title: "Hidden Japan – Toyama",
@@ -140,9 +220,6 @@ const T = {
     spots: "Featured Spots",
     switch: "日本語",
     openMap: "Open Map",
-    bookHotel: "Book Hotels",
-    getTicket: "Get Tickets",
-    whereToEat: "Where to Eat",
     searchPlaceholder: "Search by title or area…",
     filters: { all: "All", nature: "Nature", culture: "Culture", food: "Food" }
   },
@@ -152,17 +229,14 @@ const T = {
     spots: "おすすめスポット",
     switch: "EN",
     openMap: "地図で見る",
-    bookHotel: "周辺の宿を予約",
-    getTicket: "チケットを探す",
-    whereToEat: "食べに行く",
     searchPlaceholder: "タイトル・エリアで検索…",
     filters: { all: "すべて", nature: "自然", culture: "文化", food: "グルメ" }
   }
 };
 
-// ===== 🧱 ページ本体 =====
+/* ============ Page ============ */
 export default function App() {
-  // 言語はローカル保存（次回も維持）
+  // language (persist)
   const [lang, setLang] = useState("ja");
   useEffect(() => {
     try {
@@ -177,10 +251,9 @@ export default function App() {
       localStorage.setItem("hj_lang", next);
     } catch {}
   };
-
   const dict = T[lang];
 
-  // カテゴリ & 検索
+  // filters & search
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -191,36 +264,39 @@ export default function App() {
       const title = (lang === "en" ? s.title_en : s.title_ja).toLowerCase();
       const area = (s.area || "").toLowerCase();
       const desc = (lang === "en" ? s.desc_en : s.desc_ja).toLowerCase();
-      const matchText = title.includes(q) || area.includes(q) || desc.includes(q);
-      return matchCat && matchText;
+      return matchCat && (title.includes(q) || area.includes(q) || desc.includes(q));
     });
   }, [filter, query, lang]);
 
-  // 詳細モーダル
+  // modal
   const [open, setOpen] = useState(null);
 
   return (
     <div style={S.page}>
       <div style={S.wrap}>
-        {/* ===== 👑 ヘッダー ===== */}
+        {/* Header */}
         <header style={S.header}>
           <div style={S.logo}>{dict.title}</div>
-          <button style={S.btn} onClick={toggleLang}>{dict.switch}</button>
+          <button style={S.btn} onClick={toggleLang}>
+            {dict.switch}
+          </button>
         </header>
 
-        {/* ===== 🌄 ヒーロー ===== */}
+        {/* Hero */}
         <section style={S.hero}>
           <img
-            // 固定IDの富山イメージ
+            // Toyama-like mountain image
             src="https://images.unsplash.com/photo-1549693578-d683be217e58?q=80&w=1600&auto=format&fit=crop"
             alt="Toyama"
             style={S.heroImg}
-            onError={(e) => { e.currentTarget.src = fallbackImg("toyama-hero", 1600, 900); }}
+            onError={(e) => {
+              e.currentTarget.src = fallbackImg("toyama-hero", 1600, 900);
+            }}
           />
           <div style={S.heroBody}>
             <h1 style={{ margin: 0 }}>{dict.tagline}</h1>
 
-            {/* 検索ボックス */}
+            {/* Search */}
             <input
               style={S.input}
               placeholder={dict.searchPlaceholder}
@@ -228,9 +304,9 @@ export default function App() {
               onChange={(e) => setQuery(e.target.value)}
             />
 
-            {/* フィルター */}
+            {/* Filters */}
             <div style={S.filters}>
-              {["all","nature","culture","food"].map(k => (
+              {["all", "nature", "culture", "food"].map((k) => (
                 <button
                   key={k}
                   style={{
@@ -247,9 +323,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* ===== 🖼️ スポット一覧 ===== */}
+        {/* List */}
         <h2 style={{ marginTop: 24 }}>{dict.spots}</h2>
-
         <div style={S.grid}>
           {filtered.map((spot) => {
             const title = lang === "en" ? spot.title_en : spot.title_ja;
@@ -260,7 +335,9 @@ export default function App() {
                   src={spot.hero}
                   alt={title}
                   style={S.cardImg}
-                  onError={(e) => { e.currentTarget.src = fallbackImg(spot.id); }}
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackImg(spot.id);
+                  }}
                 />
                 <div style={S.cardBody}>
                   <div>
@@ -283,13 +360,13 @@ export default function App() {
           })}
         </div>
 
-        {/* ===== 🦶 フッター ===== */}
+        {/* Footer */}
         <footer style={S.footer}>
           © {new Date().getFullYear()} Hidden Japan – Toyama
         </footer>
       </div>
 
-      {/* ===== 🪟 詳細モーダル（カードをクリックで開く） ===== */}
+      {/* Modal */}
       {open && (
         <div style={S.modalBg} onClick={() => setOpen(null)}>
           <div style={S.modal} onClick={(e) => e.stopPropagation()}>
@@ -298,9 +375,13 @@ export default function App() {
                 src={open.hero}
                 alt="detail"
                 style={S.modalImg}
-                onError={(e) => { e.currentTarget.src = fallbackImg(open.id, 1200, 800); }}
+                onError={(e) => {
+                  e.currentTarget.src = fallbackImg(open.id, 1200, 800);
+                }}
               />
-              <button style={S.close} onClick={() => setOpen(null)}>✕</button>
+              <button style={S.close} onClick={() => setOpen(null)}>
+                ✕
+              </button>
             </div>
             <div style={S.modalBody}>
               <h2 style={{ margin: 0 }}>
@@ -322,13 +403,17 @@ export default function App() {
                 {lang === "en" ? open.desc_en : open.desc_ja}
               </p>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {open.map && (
+              {/* Map button */}
+              {open.map && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
                   <a href={open.map} target="_blank" rel="noreferrer" style={S.linkBtn}>
                     📍 {dict.openMap}
                   </a>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Mini map embed */}
+              {open.map && <MapEmbed q={open.map} />}
             </div>
           </div>
         </div>

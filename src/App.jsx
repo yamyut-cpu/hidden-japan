@@ -1,14 +1,14 @@
 // Hidden Japan – Toyama
-// EN/JA + filters + search + detail modal + map embed + image fallback
-// src/App.jsx
+// EN/JA + フィルタ + 検索 + 詳細モーダル + 地図埋め込み + 画像フォールバック
+// ファイル場所: src/App.jsx
 
 import { useState, useMemo, useEffect } from "react";
 
-/* ============ Image fallback (always shows something) ============ */
+/* ============ 画像フォールバック（何かしら必ず表示させる用） ============ */
 const fallbackImg = (seed, w = 1200, h = 800) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
 
-/* ============ Spots (fixed Unsplash image IDs for Toyama) ============ */
+/* ============ スポット情報（あとでここを増やしていく） ============ */
 const SPOTS = [
   {
     id: "tateyama",
@@ -16,7 +16,7 @@ const SPOTS = [
     title_ja: "立山黒部アルペンルート",
     cat: "nature",
     area: "Tateyama / Kurobe",
-    // Tateyama-like alpine view
+    // 山岳・立山アルペンルートっぽい写真（Unsplash）
     hero:
       "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1600&auto=format&fit=crop",
     desc_en:
@@ -30,7 +30,7 @@ const SPOTS = [
     title_ja: "五箇山（合掌造り集落）",
     cat: "culture",
     area: "Nanto",
-    // Gokayama thatched village
+    // 合掌造り集落っぽい写真
     hero:
       "https://images.unsplash.com/photo-1572960360912-490f0b13c3bd?q=80&w=1600&auto=format&fit=crop",
     desc_en:
@@ -44,7 +44,7 @@ const SPOTS = [
     title_ja: "雨晴海岸",
     cat: "nature",
     area: "Himi",
-    // Sea with mountains (Amaharashi vibe)
+    // 海と山の写真（雨晴海岸っぽい雰囲気）
     hero:
       "https://images.unsplash.com/photo-1519682557860-56b48f0bbd9b?q=80&w=1600&auto=format&fit=crop",
     desc_en:
@@ -58,7 +58,7 @@ const SPOTS = [
     title_ja: "富山湾の白えび",
     cat: "food",
     area: "Toyama City",
-    // Food image (white shrimp vibe)
+    // シーフードっぽい写真（白えびイメージ）
     hero:
       "https://images.unsplash.com/photo-1558036117-15d82a90b9b6?q=80&w=1600&auto=format&fit=crop",
     desc_en:
@@ -68,7 +68,7 @@ const SPOTS = [
   }
 ];
 
-/* ============ Styles ============ */
+/* ============ スタイル ============ */
 const S = {
   page: {
     minHeight: "100vh",
@@ -146,7 +146,7 @@ const S = {
     color: "#aaa",
     fontSize: 12
   },
-  // modal
+  // モーダル
   modalBg: {
     position: "fixed",
     inset: 0,
@@ -191,7 +191,7 @@ const S = {
   }
 };
 
-/* ============ Google Map mini-embed ============ */
+/* ============ Googleマップのミニ埋め込み ============ */
 function MapEmbed({ q }) {
   const search = q?.split("q=")[1] || q || "";
   const src = `https://www.google.com/maps?q=${encodeURIComponent(
@@ -212,7 +212,7 @@ function MapEmbed({ q }) {
   );
 }
 
-/* ============ Texts ============ */
+/* ============ テキスト（翻訳） ============ */
 const T = {
   en: {
     title: "Hidden Japan – Toyama",
@@ -234,9 +234,9 @@ const T = {
   }
 };
 
-/* ============ Page ============ */
+/* ============ メインコンポーネント ============ */
 export default function App() {
-  // language (persist)
+  // 言語（ローカルに保存）
   const [lang, setLang] = useState("ja");
   useEffect(() => {
     try {
@@ -253,7 +253,7 @@ export default function App() {
   };
   const dict = T[lang];
 
-  // filters & search
+  // フィルタ + 検索
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -268,13 +268,13 @@ export default function App() {
     });
   }, [filter, query, lang]);
 
-  // modal
+  // モーダル
   const [open, setOpen] = useState(null);
 
   return (
     <div style={S.page}>
       <div style={S.wrap}>
-        {/* Header */}
+        {/* ヘッダー */}
         <header style={S.header}>
           <div style={S.logo}>{dict.title}</div>
           <button style={S.btn} onClick={toggleLang}>
@@ -282,11 +282,11 @@ export default function App() {
           </button>
         </header>
 
-        {/* Hero */}
+        {/* ヒーロー */}
         <section style={S.hero}>
           <img
-            // Toyama-like mountain image
-            src="https://images.unsplash.com/photo-1549693578-d683be217e58?q=80&w=1600&auto=format&fit=crop"
+            // 立山っぽい山の写真（トップの大きい画像）
+            src="https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1600&auto=format&fit=crop"
             alt="Toyama"
             style={S.heroImg}
             onError={(e) => {
@@ -296,7 +296,7 @@ export default function App() {
           <div style={S.heroBody}>
             <h1 style={{ margin: 0 }}>{dict.tagline}</h1>
 
-            {/* Search */}
+            {/* 検索ボックス */}
             <input
               style={S.input}
               placeholder={dict.searchPlaceholder}
@@ -304,7 +304,7 @@ export default function App() {
               onChange={(e) => setQuery(e.target.value)}
             />
 
-            {/* Filters */}
+            {/* カテゴリフィルタ */}
             <div style={S.filters}>
               {["all", "nature", "culture", "food"].map((k) => (
                 <button
@@ -323,7 +323,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* List */}
+        {/* 一覧 */}
         <h2 style={{ marginTop: 24 }}>{dict.spots}</h2>
         <div style={S.grid}>
           {filtered.map((spot) => {
@@ -360,13 +360,13 @@ export default function App() {
           })}
         </div>
 
-        {/* Footer */}
+        {/* フッター */}
         <footer style={S.footer}>
           © {new Date().getFullYear()} Hidden Japan – Toyama
         </footer>
       </div>
 
-      {/* Modal */}
+      {/* 詳細モーダル */}
       {open && (
         <div style={S.modalBg} onClick={() => setOpen(null)}>
           <div style={S.modal} onClick={(e) => e.stopPropagation()}>
@@ -403,16 +403,28 @@ export default function App() {
                 {lang === "en" ? open.desc_en : open.desc_ja}
               </p>
 
-              {/* Map button */}
+              {/* 地図ボタン */}
               {open.map && (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                  <a href={open.map} target="_blank" rel="noreferrer" style={S.linkBtn}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    marginBottom: 10
+                  }}
+                >
+                  <a
+                    href={open.map}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={S.linkBtn}
+                  >
                     📍 {dict.openMap}
                   </a>
                 </div>
               )}
 
-              {/* Mini map embed */}
+              {/* ミニ地図埋め込み */}
               {open.map && <MapEmbed q={open.map} />}
             </div>
           </div>

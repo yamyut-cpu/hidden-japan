@@ -1,4 +1,4 @@
-// Hidden Japan – Toyama (EN/JA, filters + detail modal + image fallback)
+// Hidden Japan – Toyama (EN/JA, filters + search + detail modal + image fallback)
 // src/App.jsx
 
 // ===== ⚙️ IMPORTS =====
@@ -16,13 +16,13 @@ const SPOTS = [
     title_ja: "立山黒部アルペンルート",
     cat: "nature",
     area: "Tateyama / Kurobe",
-    hero: "https://source.unsplash.com/1200x800/?tateyama,toyama,alpine,Japan",
+    // 固定IDの安定画像
+    hero: "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1600&auto=format&fit=crop",
     desc_en:
       "Snow walls, ropeways and stunning alpine views. Best from spring to autumn.",
     desc_ja:
       "雪の大谷、ロープウェイ、雄大な山岳景観。春〜秋がベストシーズン。",
     map: "https://maps.google.com/?q=Tateyama+Kurobe+Alpine+Route"
-    // hotel: "", ticket: "" ← 無ければ削除/未設定でOK（ボタンは出ません）
   },
   {
     id: "gokayama",
@@ -30,7 +30,7 @@ const SPOTS = [
     title_ja: "五箇山（合掌造り集落）",
     cat: "culture",
     area: "Nanto",
-    hero: "https://source.unsplash.com/1200x800/?gokayama,thatched,village,Japan",
+    hero: "https://images.unsplash.com/photo-1572960360912-490f0b13c3bd?q=80&w=1600&auto=format&fit=crop",
     desc_en:
       "Quiet UNESCO-listed thatched villages, calmer than Shirakawa-go.",
     desc_ja:
@@ -43,7 +43,7 @@ const SPOTS = [
     title_ja: "雨晴海岸",
     cat: "nature",
     area: "Himi",
-    hero: "https://source.unsplash.com/1200x800/?ama-harashi,coast,toyama,sea,mountains",
+    hero: "https://images.unsplash.com/photo-1519682557860-56b48f0bbd9b?q=80&w=1600&auto=format&fit=crop",
     desc_en:
       "Rare view where the sea meets the 3,000m Tateyama mountains.",
     desc_ja: "海越しに立山連峰を望む絶景スポット。天気が良い日におすすめ。",
@@ -55,12 +55,11 @@ const SPOTS = [
     title_ja: "富山湾の白えび",
     cat: "food",
     area: "Toyama City",
-    hero: "https://source.unsplash.com/1200x800/?white-shrimp,toyama,seafood,Japan",
+    hero: "https://images.unsplash.com/photo-1558036117-15d82a90b9b6?q=80&w=1600&auto=format&fit=crop",
     desc_en:
       "Local delicacy—try tempura or sashimi. Look for 'Shiro-ebi' signs.",
     desc_ja: "富山名物の白えび。天ぷらや刺身で味わうのが定番。",
     map: "https://maps.google.com/?q=Toyama+white+shrimp"
-    // food: ""
   }
 ];
 
@@ -89,6 +88,11 @@ const S = {
   heroImg: { width: "100%", height: 300, objectFit: "cover" },
   heroBody: { padding: 16 },
   filters: { marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" },
+  input: {
+    marginTop: 10, width: "100%", padding: "8px 10px",
+    borderRadius: 10, border: "1px solid #333", background: "#0f0f0f",
+    color: "#fff", fontSize: 14
+  },
   grid: {
     marginTop: 20, display: "grid", gap: 14,
     gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))"
@@ -139,6 +143,7 @@ const T = {
     bookHotel: "Book Hotels",
     getTicket: "Get Tickets",
     whereToEat: "Where to Eat",
+    searchPlaceholder: "Search by title or area…",
     filters: { all: "All", nature: "Nature", culture: "Culture", food: "Food" }
   },
   ja: {
@@ -150,6 +155,7 @@ const T = {
     bookHotel: "周辺の宿を予約",
     getTicket: "チケットを探す",
     whereToEat: "食べに行く",
+    searchPlaceholder: "タイトル・エリアで検索…",
     filters: { all: "すべて", nature: "自然", culture: "文化", food: "グルメ" }
   }
 };
@@ -174,12 +180,21 @@ export default function App() {
 
   const dict = T[lang];
 
-  // カテゴリ絞り込み
+  // カテゴリ & 検索
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
-    if (filter === "all") return SPOTS;
-    return SPOTS.filter((s) => s.cat === filter);
-  }, [filter]);
+    const q = query.trim().toLowerCase();
+    return SPOTS.filter((s) => {
+      const matchCat = filter === "all" ? true : s.cat === filter;
+      if (!q) return matchCat;
+      const title = (lang === "en" ? s.title_en : s.title_ja).toLowerCase();
+      const area = (s.area || "").toLowerCase();
+      const desc = (lang === "en" ? s.desc_en : s.desc_ja).toLowerCase();
+      const matchText = title.includes(q) || area.includes(q) || desc.includes(q);
+      return matchCat && matchText;
+    });
+  }, [filter, query, lang]);
 
   // 詳細モーダル
   const [open, setOpen] = useState(null);
@@ -196,13 +211,23 @@ export default function App() {
         {/* ===== 🌄 ヒーロー ===== */}
         <section style={S.hero}>
           <img
-            src="https://source.unsplash.com/1600x900/?toyama,japan,alps"
+            // 固定IDの富山イメージ
+            src="https://images.unsplash.com/photo-1549693578-d683be217e58?q=80&w=1600&auto=format&fit=crop"
             alt="Toyama"
             style={S.heroImg}
             onError={(e) => { e.currentTarget.src = fallbackImg("toyama-hero", 1600, 900); }}
           />
           <div style={S.heroBody}>
             <h1 style={{ margin: 0 }}>{dict.tagline}</h1>
+
+            {/* 検索ボックス */}
+            <input
+              style={S.input}
+              placeholder={dict.searchPlaceholder}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+
             {/* フィルター */}
             <div style={S.filters}>
               {["all","nature","culture","food"].map(k => (
@@ -301,21 +326,6 @@ export default function App() {
                 {open.map && (
                   <a href={open.map} target="_blank" rel="noreferrer" style={S.linkBtn}>
                     📍 {dict.openMap}
-                  </a>
-                )}
-                {open.hotel && (
-                  <a href={open.hotel} target="_blank" rel="noreferrer" style={S.linkBtn}>
-                    🏨 {dict.bookHotel}
-                  </a>
-                )}
-                {open.ticket && (
-                  <a href={open.ticket} target="_blank" rel="noreferrer" style={S.linkBtn}>
-                    🎫 {dict.getTicket}
-                  </a>
-                )}
-                {open.food && (
-                  <a href={open.food} target="_blank" rel="noreferrer" style={S.linkBtn}>
-                    🍣 {dict.whereToEat}
                   </a>
                 )}
               </div>
